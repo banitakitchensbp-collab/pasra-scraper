@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title>PASRA Govt Jobs Scraper</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid black; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>PASRA Govt Jobs Scraper</h1>
+  <form method="post">
+    <button type="submit" name="find_jobs">Find Today Jobs</button>
+  </form>
+  <p>{{ message }}</p>
+  {% if jobs %}
+  <h2>Found Jobs ({{ jobs|length }})</h2>
+  <table>
+    <tr><th>Title</th><th>Link</th><th>Site</th></tr>
+    {% for job in jobs %}
+    <tr>
+      <td>{{ job.title }}</td>
+      <td><a href="{{ job.link }}" target="_blank">{{ job.link }}</a></td>
+      <td>{{ job.site }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <form method="post">
+    <button type="submit" name="save_jobs">Save Jobs to Firebase</button>
+  </form>
+  {% endif %}
+</body>
+</html>

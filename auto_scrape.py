@@ -1,6 +1,6 @@
 # auto_scrape.py
-# Standalone script - daily govt jobs scraper for PASRA app
-# No Flask/browser needed - direct run karo ya scheduler se chalao
+# Standalone Govt Jobs Scraper for PASRA app
+# Daily auto run ke liye best - no server needed
 # Requirements: pip install requests beautifulsoup4 firebase-admin
 
 import requests
@@ -11,14 +11,37 @@ import time
 import re
 from datetime import datetime
 import logging
+import json
+import os
 
-# Logging setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logging setup (console + file mein bhi save hoga)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("scrape_log.txt")
+    ]
+)
 
-# Firebase setup (pasra-firebase.json file same folder mein rakhna)
-cred = credentials.Certificate('pasra-firebase.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Firebase setup - Environment se load kar raha hai (Render ke liye perfect)
+def initialize_firebase():
+    cred_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+    if cred_json is None:
+        logging.error("GOOGLE_APPLICATION_CREDENTIALS env variable nahi mila!")
+        exit(1)
+
+    try:
+        cred_dict = json.loads(cred_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        logging.info("Firebase initialized successfully")
+        return firestore.client()
+    except Exception as e:
+        logging.error(f"Firebase init fail: {e}")
+        exit(1)
+
+db = initialize_firebase()
 
 # States keywords
 STATES = {
@@ -30,6 +53,7 @@ STATES = {
     'all': []
 }
 
+# Sites list
 SITES = [
     {"url": "https://www.indgovtjobs.in/", "name": "IndGovtJobs"},
     {"url": "https://www.sarkariresult.com/", "name": "SarkariResult"},
@@ -175,7 +199,7 @@ def auto_scrape_and_save():
     duplicates = 0
 
     for site in SITES:
-        time.sleep(3)  # polite delay
+        time.sleep(3)  # polite delay to avoid rate limit
         site_jobs = scrape_from_site(site['url'], site['name'])
         logging.info(f"Found {len(site_jobs)} jobs from {site['name']}")
 

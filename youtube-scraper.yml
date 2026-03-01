@@ -1,0 +1,42 @@
+name: PASRA YouTube Govt Job Videos Scraper
+
+on:
+  schedule:
+    - cron: '30 2 * * *'   # Roz subah 8:00 AM IST (UTC 2:30 AM)
+  workflow_dispatch:       # Manual run button GitHub pe (test ke liye)
+
+jobs:
+  scrape-videos:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests firebase-admin
+
+    - name: Run YouTube Videos Scraper
+      env:
+        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+      run: python yt_job_videos_link.py
+
+    - name: Upload logs (if any)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: youtube-scraper-logs
+        path: scrape_log.txt
+        if-no-files-found: warn
+
+    - name: Show recent logs
+      if: always()
+      run: tail -n 30 scrape_log.txt 2>/dev/null || echo "No log file generated"
